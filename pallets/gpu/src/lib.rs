@@ -36,13 +36,27 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 	}
 
+	type AccountOf<T> = <T as frame_system::Config>::AccountId;
+
+	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+	pub struct Metadata<T: Config> {
+		pub machine_id: Vec<u8>,
+		pub gpu_type: Vec<u8>,
+		pub owner: T::AccountId,
+	}
+
 	// The pallet's runtime storage items.
 	// https://docs.substrate.io/main-docs/build/runtime-storage/
 	#[pallet::storage]
-	#[pallet::getter(fn gpu_storage_value)]
+	#[pallet::getter(fn machine_meta_data)]
 	// Learn more about declaring storage items:
 	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-	pub type Something<T> = StorageValue<_, Vec<u8>>;
+	pub type MachineMetadata<T> = StorageValue<_, Vec<u8>>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn metadata)]
+	pub type MetadataStore<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Metadata<T>>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/main-docs/build/events-errors/
@@ -51,7 +65,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
-		SomethingStored { something: Vec<u8>, who: T::AccountId },
+		MachineMetadataStored { something: Vec<u8>, who: T::AccountId },
 	}
 
 	// Errors inform users that something went wrong.
@@ -72,39 +86,22 @@ pub mod pallet {
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::do_something())]
-		pub fn do_something(origin: OriginFor<T>, something: Vec<u8>) -> DispatchResult {
+		pub fn rent_gpu(origin: OriginFor<T>, _id: Vec<u8>, _gpu_type: Vec<u8>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/main-docs/build/origins/
 			let who = ensure_signed(origin)?;
+			let who2 = who.clone();
+			// // Update storage.
+			// <MachineMetadata<T>>::put(_id);
 
-			// Update storage.
-			<Something<T>>::put(something);
+			let _metadata = Metadata::<T> { machine_id: _id, gpu_type: _gpu_type, owner: who };
+			<MetadataStore<T>>::insert(who2, _metadata);
 
 			// Emit an event.
 			// Self::deposit_event(Event::SomethingStored { something, who });
 			// Return a successful DispatchResultWithPostInfo
 			Ok(())
-		}
-
-		/// An example dispatchable that may throw a custom error.
-		#[pallet::call_index(1)]
-		#[pallet::weight(T::WeightInfo::cause_error())]
-		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-			let _who = ensure_signed(origin)?;
-
-			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => return Err(Error::<T>::NoneValue.into()),
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					// let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(old);
-					Ok(())
-				},
-			}
 		}
 	}
 }

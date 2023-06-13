@@ -21,6 +21,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+
 	use sp_std::vec::Vec;
 
 	#[pallet::pallet]
@@ -38,11 +39,21 @@ pub mod pallet {
 
 	type AccountOf<T> = <T as frame_system::Config>::AccountId;
 
-	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebugNoBound, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
 	pub struct Metadata<T: Config> {
 		pub machine_id: Vec<u8>,
-		pub gpu_type: Vec<u8>,
+		pub machine_cpu_ram: Vec<u8>,
+		pub machine_cpu_cores: Vec<u8>,
+		pub machine_cpu_make_model: Vec<u8>,
+		pub machine_cpu_clock: Vec<u8>,
+		pub machine_os_name: Vec<u8>,
+		pub machine_os_arch: Vec<u8>,
+		pub machine_os_version: Vec<u8>,
+		pub machine_gpu_name: Vec<u8>,
+		pub machine_gpu_cores: Vec<u8>,
+		pub machine_gpu_vram: Vec<u8>,
+		pub machine_gpu_cuda_version: Vec<u8>,
 		pub owner: T::AccountId,
 	}
 
@@ -86,17 +97,17 @@ pub mod pallet {
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::do_something())]
-		pub fn rent_gpu(origin: OriginFor<T>, _id: Vec<u8>, _gpu_type: Vec<u8>) -> DispatchResult {
+		pub fn machine_metadata(origin: OriginFor<T>, _metadata: Metadata<T>) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/main-docs/build/origins/
 			let who = ensure_signed(origin)?;
-			let who2 = who.clone();
+
 			// // Update storage.
 			// <MachineMetadata<T>>::put(_id);
 
-			let _metadata = Metadata::<T> { machine_id: _id, gpu_type: _gpu_type, owner: who };
-			<MetadataStore<T>>::insert(who2, _metadata);
+			// let _metadata = Metadata::<T> { machine_id: _id, gpu_type: _gpu_type, owner: who };
+			<MetadataStore<T>>::insert(who.clone(), _metadata);
 
 			// Emit an event.
 			// Self::deposit_event(Event::SomethingStored { something, who });
